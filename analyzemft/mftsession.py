@@ -12,6 +12,7 @@
 VERSION = "v2.0.18"
 
 import csv
+import json
 import os
 import sys
 from optparse import OptionParser
@@ -53,6 +54,10 @@ class MftSession:
         parser.add_option("-f", "--file", dest="filename",
                           help="read MFT from FILE", metavar="FILE")
 
+        parser.add_option("-j", "--json-extract",
+                          dest="json",
+                          help="File paths should use the windows path separator instead of linux")        
+        
         parser.add_option("-o", "--output", dest="output",
                           help="write results to FILE", metavar="FILE")
 
@@ -95,7 +100,8 @@ class MftSession:
         parser.add_option("-w", "--windows-path",
                           action="store_true", dest="winpath",
                           help="File paths should use the windows path separator instead of linux")
-
+        
+        
         (self.options, args) = parser.parse_args()
 
         self.path_sep = '\\' if self.options.winpath else '/'
@@ -209,13 +215,38 @@ class MftSession:
             raw_record = self.file_mft.read(1024)
 
     def do_output(self, record):
-
+        
+        
         if self.options.inmemory:
             self.fullmft[self.num_records] = record
 
         if self.options.output is not None:
             self.file_csv.writerow(mft.mft_to_csv(record, False, self.options))
-
+        
+        if self.options.json is not None:
+            #print "JSON Creator"
+            #print mft.mft_to_json(record)
+            #print json.dumps()
+            with open('mft.json', 'a') as outfile:
+                json.dump(mft.mft_to_json(record), outfile)
+                outfile.write('\n')
+            
+        
+ 
+                #print "Make Me JSON %s, %s, %s , %s, %s"  % (str(record['recordnum']), str(record['filename']), str(record['magic']), str(record['size']), record['si']['mtime'].dtstr)
+                #print "Pull me %s -" % str(record['recordnum'])
+                #print "Pull me %s -" % str(record['magic'])
+                #print "Pull me %s -" % str(record['size'])
+                #print "Pull me %s -" % record['si']['mtime'].dtstr
+                
+                # Filename %s - MagicNumber %s - Size %s - TimeCreated %s"
+                #, str(record['magic']), str(record['size']), str(record['si']['atime']['dtstr'])
+                #print "to JSON record %s" % record['recordnum']
+                
+            #mft_json  = json.dumps(record['seq'], sort_keys=False, indent=4, separators=(',', ': '),encoding="utf-8",ensure_ascii=False)
+            #print type(mft_json)
+            
+            
         if self.options.csvtimefile is not None:
             self.file_csv_time.write(mft.mft_to_l2t(record))
 
